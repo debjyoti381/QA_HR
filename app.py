@@ -21,7 +21,7 @@ def get_env_var(var_name):
         raise EnvironmentError(f"Missing required environment variable: {var_name}")
     return value
 
-# Setting Google service account credentials using environment variables
+# Setting Google service account credentials using environment variables from GitHub Secrets
 credentials_dict = {
     "type": "service_account",
     "project_id": get_env_var("GOOGLE_PROJECT_ID"),
