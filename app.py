@@ -1,37 +1,24 @@
 import os
 import streamlit as st
-from dotenv import load_dotenv
 
-# Load environment variables explicitly from a .env file
-dotenv_path = ".env"  # Specify the relative or absolute path to your .env file if needed
-load_dotenv(dotenv_path)
+# Load secrets directly from environment variables
+project_id = os.getenv("GOOGLE_PROJECT_ID")
+private_key_id = os.getenv("GOOGLE_PRIVATE_KEY_ID")
+private_key = os.getenv("GOOGLE_PRIVATE_KEY")
+client_email = os.getenv("GOOGLE_CLIENT_EMAIL")
+client_id = os.getenv("GOOGLE_CLIENT_ID")
+client_cert_url = os.getenv("GOOGLE_CLIENT_CERT_URL")
+drive_folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")
+api_key = os.getenv("GOOGLE_API_KEY")
 
-# Retrieve environment variables and handle missing values
-project_id = os.getenv("GOOGLE_PROJECT_ID", "Not Found")
-private_key_id = os.getenv("GOOGLE_PRIVATE_KEY_ID", "Not Found")
-private_key = os.getenv("GOOGLE_PRIVATE_KEY", "Not Found")
-client_email = os.getenv("GOOGLE_CLIENT_EMAIL", "Not Found")
-client_id = os.getenv("GOOGLE_CLIENT_ID", "Not Found")
-client_cert_url = os.getenv("GOOGLE_CLIENT_CERT_URL", "Not Found")
-drive_folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "Not Found")
-api_key = os.getenv("GOOGLE_API_KEY", "Not Found")
-
-# Display the variables in Streamlit
-st.title("Environment Variables Loaded from .env")
-st.write("### Google Project Information")
-st.write("**GOOGLE_PROJECT_ID:**", project_id)
-st.write("**GOOGLE_PRIVATE_KEY_ID:**", private_key_id)
-st.write("**GOOGLE_PRIVATE_KEY:**", private_key)
-st.write("**GOOGLE_CLIENT_EMAIL:**", client_email)
-st.write("**GOOGLE_CLIENT_ID:**", client_id)
-st.write("**GOOGLE_CLIENT_CERT_URL:**", client_cert_url)
-
-st.write("### Additional Settings")
-st.write("**GOOGLE_DRIVE_FOLDER_ID:**", drive_folder_id)
-st.write("**GOOGLE_API_KEY:**", api_key)
-
-# Check if variables were loaded successfully
-if "Not Found" in [project_id, private_key_id, private_key, client_email, client_id, client_cert_url, drive_folder_id, api_key]:
-    st.warning("Some environment variables were not loaded. Check .env file and paths.")
-else:
-    st.success("All environment variables loaded successfully!")
+# Display the loaded secrets (for debugging purposes only)
+st.write("Google Project Information")
+st.write(f"GOOGLE_PROJECT_ID: {project_id}")
+st.write(f"GOOGLE_PRIVATE_KEY_ID: {private_key_id}")
+st.write(f"GOOGLE_PRIVATE_KEY: {private_key}")
+st.write(f"GOOGLE_CLIENT_EMAIL: {client_email}")
+st.write(f"GOOGLE_CLIENT_ID: {client_id}")
+st.write(f"GOOGLE_CLIENT_CERT_URL: {client_cert_url}")
+st.write("Additional Settings")
+st.write(f"GOOGLE_DRIVE_FOLDER_ID: {drive_folder_id}")
+st.write(f"GOOGLE_API_KEY: {api_key}")
