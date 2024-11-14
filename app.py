@@ -15,7 +15,7 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.documents import Document
 
-# Load environment variables
+# Load environment variables from .env
 load_dotenv()
 
 # Set up Google Drive API using environment variables from .env
