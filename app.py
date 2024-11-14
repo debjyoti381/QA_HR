@@ -7,6 +7,7 @@ from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableParallel, RunnablePassthrough
 from langchain_core.output_parsers import StrOutputParser
 from langchain_google_genai import ChatGoogleGenerativeAI
+from dotenv import load_dotenv
 import pandas as pd
 from langchain_core.documents import Document
 from google.oauth2 import service_account
@@ -14,32 +15,29 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
 
-# Helper function to retrieve environment variables with error handling
-def get_env_var(var_name):
-    value = os.getenv(var_name)
-    if not value:
-        raise EnvironmentError(f"Missing required environment variable: {var_name}")
-    return value
+# Load environment variables from .env file
+load_dotenv()
 
-# Setting Google service account credentials using environment variables from GitHub Secrets
-credentials_dict = {
+# Retrieve Google API Key from .env file
+os.environ["GOOGLE_API_KEY"] = os.getenv("GOOGLE_API_KEY")
+
+# Google Drive API Setup
+SCOPES = ['https://www.googleapis.com/auth/drive']
+credentials = service_account.Credentials.from_service_account_info({
     "type": "service_account",
-    "project_id": get_env_var("GOOGLE_PROJECT_ID"),
-    "private_key_id": get_env_var("GOOGLE_PRIVATE_KEY_ID"),
-    "private_key": get_env_var("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": get_env_var("GOOGLE_CLIENT_EMAIL"),
-    "client_id": get_env_var("GOOGLE_CLIENT_ID"),
+    "project_id": os.getenv("GOOGLE_PROJECT_ID"),
+    "private_key_id": os.getenv("GOOGLE_PRIVATE_KEY_ID"),
+    "private_key": os.getenv("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": os.getenv("GOOGLE_CLIENT_EMAIL"),
+    "client_id": os.getenv("GOOGLE_CLIENT_ID"),
     "auth_uri": "https://accounts.google.com/o/oauth2/auth",
     "token_uri": "https://oauth2.googleapis.com/token",
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": get_env_var("GOOGLE_CLIENT_CERT_URL"),
-}
-
-# Google Drive API setup
-credentials = service_account.Credentials.from_service_account_info(credentials_dict)
+    "client_x509_cert_url": os.getenv("GOOGLE_CLIENT_X509_CERT_URL")
+}, scopes=SCOPES)
 drive_service = build('drive', 'v3', credentials=credentials)
 
-# Function to download CSV files from Google Drive folder and combine as text
+# Function to download and combine CSV files from Google Drive folder
 def get_combined_csv_text_from_drive(folder_id):
     query = f"'{folder_id}' in parents"
     results = drive_service.files().list(q=query, fields="files(id, name, mimeType)").execute()
@@ -87,7 +85,7 @@ def get_combined_csv_text_from_drive(folder_id):
     print("Combined text length after processing all files:", len(combined_text))
     return combined_text
 
-# Split text into manageable chunks and create Document objects
+# Split text into chunks and create Document objects
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=10)
     chunks = text_splitter.split_text(text)
@@ -107,7 +105,8 @@ def setup_vectorstore(docs):
 
 # Set up the RAG chain with Google Gemini API
 def setup_rag_chain(vectorstore, model_name="gemini-1.5-flash"):
-    template = """Answer the question in a single sentence. If the answer is not in the context, just say, "answer is not available in the context".
+    template = """Answer the question in a single sentence with correct answer . Do not require extra explanation from the provided context. Make sure to provide all the details.
+    If the answer is not in the provided context, just say, "answer is not available in the context."
     Context: {context}
     Question: {question}"""
     
@@ -131,7 +130,8 @@ def answer_question(chain, query):
 # Streamlit interface for chatting with CSV data
 def main():
     st.title("Chat - BOT")
-    folder_id = '1Oi7MC9FrSHjhw0r5x_H8tuDMR5gyb_UX'
+
+    folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID")  # Load folder ID from .env file
     
     if "text_chunks" not in st.session_state:
         with st.spinner("Processing CSV files from Google Drive..."):
@@ -152,5 +152,6 @@ def main():
             answer = answer_question(st.session_state['chain'], query)
             st.write(f"Answer: {answer}")
 
+# Run the Streamlit app
 if __name__ == "__main__":
     main()
