@@ -14,7 +14,10 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
 
-# Load environment variables for Google credentials
+# Set environment variable for Google API Key directly in the code (useful for debugging)
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+
+# Google Drive API Setup using environment variables
 credentials_info = {
     "type": "service_account",
     "project_id": os.getenv("GOOGLE_PROJECT_ID"),
@@ -28,7 +31,6 @@ credentials_info = {
     "client_x509_cert_url": os.getenv("GOOGLE_CLIENT_CERT_URL"),
 }
 
-# Authenticate with Google using the environment-loaded credentials
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 drive_service = build('drive', 'v3', credentials=credentials)
 
@@ -64,7 +66,7 @@ def get_combined_csv_text_from_drive(folder_id):
 
         fh.seek(0)
         content = fh.read().decode("utf-8")
-        print(f"Downloaded content for {file['name']}")
+        print(f"Downloaded content for {file['name']} (first 500 characters):\n{content[:500]}")
 
         try:
             df = pd.read_csv(io.StringIO(content))
@@ -82,7 +84,7 @@ def get_combined_csv_text_from_drive(folder_id):
 
 # Split text into manageable chunks and create Document objects
 def get_text_chunks(text):
-    text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=30)
+    text_splitter = RecursiveCharacterTextSplitter(chunk_size=100, chunk_overlap=10)
     chunks = text_splitter.split_text(text)
     return [Document(page_content=chunk, metadata={"id": str(i)}) for i, chunk in enumerate(chunks)]
 
@@ -101,13 +103,12 @@ def setup_vectorstore(docs):
 
 # Set up the RAG chain with Google Gemini API
 def setup_rag_chain(vectorstore, model_name="gemini-1.5-flash"):
-    template = """Answer the question as an HR representative, using the provided office data to give accurate and relevant responses. If some information is missing or partially present, use reasonable assumptions to complete the response in a helpful and professional way. Be concise but informative.
-
-If the answer is not present in the provided data and cannot be reasonably inferred, respond with 'The information is not available in the current records.' Ensure responses align with general HR practices.
-
-Context: {context}
-
-Question: {question}"""
+    template = """Answer the question in a single sentence with correct answer. Do not require extra explanation from the provided context. Make sure to provide all the details.
+    If the answer is not in the provided context, just say, "answer is not available in the context."
+    If user asks you like 1. who build you then give the answer as Utkarsh and 2. what is your name then give the answer as FlivoAI chatbot or 3. who are you just say FlivoAI Chatbot to solve your queries".
+    
+    Context: {context}
+    Question: {question}"""
     
     prompt = ChatPromptTemplate.from_template(template)
     model = ChatGoogleGenerativeAI(model=model_name, temperature=0.01)
