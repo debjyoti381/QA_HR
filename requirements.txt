@@ -1,0 +1,11 @@
+streamlit
+pandas
+langchain
+langchain-google-genai
+langchain-community
+python-dotenv
+faiss-cpu
+google-auth
+O365
+langchain_text_splitters 
+msal 
