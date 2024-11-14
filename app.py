@@ -14,32 +14,29 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
 
-# Helper function to get environment variable and raise an error if missing
-def get_env_variable(var_name):
+# Helper function to retrieve environment variables with error handling
+def get_env_var(var_name):
     value = os.getenv(var_name)
-    if value is None:
+    if not value:
         raise EnvironmentError(f"Missing required environment variable: {var_name}")
     return value
 
-# Retrieve and prepare Google credentials from environment variables
-try:
-    credentials_info = {
-        "type": "service_account",
-        "project_id": get_env_variable("GOOGLE_PROJECT_ID"),
-        "private_key_id": get_env_variable("GOOGLE_PRIVATE_KEY_ID"),
-        "private_key": get_env_variable("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
-        "client_email": get_env_variable("GOOGLE_CLIENT_EMAIL"),
-        "client_id": get_env_variable("GOOGLE_CLIENT_ID"),
-        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-        "token_uri": "https://oauth2.googleapis.com/token",
-        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-        "client_x509_cert_url": get_env_variable("GOOGLE_CLIENT_CERT_URL"),
-    }
-except EnvironmentError as e:
-    st.error(str(e))
-    st.stop()  # Stop execution if any required environment variable is missing
+# Setting Google service account credentials using environment variables
+credentials_dict = {
+    "type": "service_account",
+    "project_id": get_env_var("GOOGLE_PROJECT_ID"),
+    "private_key_id": get_env_var("GOOGLE_PRIVATE_KEY_ID"),
+    "private_key": get_env_var("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
+    "client_email": get_env_var("GOOGLE_CLIENT_EMAIL"),
+    "client_id": get_env_var("GOOGLE_CLIENT_ID"),
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": get_env_var("GOOGLE_CLIENT_CERT_URL"),
+}
 
-credentials = service_account.Credentials.from_service_account_info(credentials_info)
+# Google Drive API setup
+credentials = service_account.Credentials.from_service_account_info(credentials_dict)
 drive_service = build('drive', 'v3', credentials=credentials)
 
 # Function to download CSV files from Google Drive folder and combine as text
@@ -101,7 +98,6 @@ def setup_vectorstore(docs):
     embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004")
     embedding_values = embeddings.embed_documents([document.page_content for document in docs])
 
-    print("Embedding values:", embedding_values)
     if len(embedding_values) == 0 or len(embedding_values[0]) == 0:
         raise ValueError("Embedding generation failed. Check the embeddings model and API configuration.")
     
@@ -111,10 +107,7 @@ def setup_vectorstore(docs):
 
 # Set up the RAG chain with Google Gemini API
 def setup_rag_chain(vectorstore, model_name="gemini-1.5-flash"):
-    template = """Answer the question in a single sentence with correct answer. Do not require extra explanation from the provided context. Make sure to provide all the details.
-    If the answer is not in the provided context, just say, "answer is not available in the context."
-    If user asks you like 1. who built you, answer "Utkarsh," 2. your name, answer "FlivoAI chatbot," or 3. who are you, answer "FlivoAI Chatbot to solve your queries".
-    
+    template = """Answer the question in a single sentence. If the answer is not in the context, just say, "answer is not available in the context".
     Context: {context}
     Question: {question}"""
     
@@ -138,14 +131,12 @@ def answer_question(chain, query):
 # Streamlit interface for chatting with CSV data
 def main():
     st.title("Chat - BOT")
-
     folder_id = '1Oi7MC9FrSHjhw0r5x_H8tuDMR5gyb_UX'
     
     if "text_chunks" not in st.session_state:
         with st.spinner("Processing CSV files from Google Drive..."):
             raw_text = get_combined_csv_text_from_drive(folder_id)
             docs = get_text_chunks(raw_text)
-            print("Number of documents:", len(docs))
             if len(docs) == 0:
                 st.error("No text chunks were created from the CSV files.")
                 return
@@ -161,6 +152,5 @@ def main():
             answer = answer_question(st.session_state['chain'], query)
             st.write(f"Answer: {answer}")
 
-# Run the Streamlit app
 if __name__ == "__main__":
     main()
