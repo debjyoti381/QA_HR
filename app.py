@@ -16,7 +16,7 @@ load_dotenv()
 
 # Set environment variable for Google API Key
 # GOOGLE_API_KEY = "AIzaSyARxm0Lk5SXSHRMt_Rw3iklQrVQcGRgVCA"
-os.environ["GOOGLE_API_KEY"] = ""
+os.environ["GOOGLE_API_KEY"] = "AIzaSyARxm0Lk5SXSHRMt_Rw3iklQrVQcGRgVCA"
 
 
 # Load multiple CSV files and convert them to a combined string
