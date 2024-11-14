@@ -31,6 +31,18 @@ credentials_info = {
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     "client_x509_cert_url": os.getenv("GOOGLE_CLIENT_CERT_URL")
 }
+# Load environment variables from .env
+load_dotenv()
+
+# Show all environment variables for verification
+print("GOOGLE_PROJECT_ID:", os.getenv("GOOGLE_PROJECT_ID"))
+print("GOOGLE_PRIVATE_KEY_ID:", os.getenv("GOOGLE_PRIVATE_KEY_ID"))
+print("GOOGLE_PRIVATE_KEY:", os.getenv("GOOGLE_PRIVATE_KEY"))
+print("GOOGLE_CLIENT_EMAIL:", os.getenv("GOOGLE_CLIENT_EMAIL"))
+print("GOOGLE_CLIENT_ID:", os.getenv("GOOGLE_CLIENT_ID"))
+print("GOOGLE_CLIENT_CERT_URL:", os.getenv("GOOGLE_CLIENT_CERT_URL"))
+print("GOOGLE_DRIVE_FOLDER_ID:", os.getenv("GOOGLE_DRIVE_FOLDER_ID"))
+print("GOOGLE_API_KEY:", os.getenv("GOOGLE_API_KEY"))
 
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 drive_service = build('drive', 'v3', credentials=credentials)
