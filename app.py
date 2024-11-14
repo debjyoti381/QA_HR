@@ -14,22 +14,30 @@ from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 import io
 
-# Set environment variable for Google API Key directly in the code (useful for debugging)
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+# Helper function to get environment variable and raise an error if missing
+def get_env_variable(var_name):
+    value = os.getenv(var_name)
+    if value is None:
+        raise EnvironmentError(f"Missing required environment variable: {var_name}")
+    return value
 
-# Google Drive API Setup using environment variables
-credentials_info = {
-    "type": "service_account",
-    "project_id": os.getenv("GOOGLE_PROJECT_ID"),
-    "private_key_id": os.getenv("GOOGLE_PRIVATE_KEY_ID"),
-    "private_key": os.getenv("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
-    "client_email": os.getenv("GOOGLE_CLIENT_EMAIL"),
-    "client_id": os.getenv("GOOGLE_CLIENT_ID"),
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": os.getenv("GOOGLE_CLIENT_CERT_URL"),
-}
+# Retrieve and prepare Google credentials from environment variables
+try:
+    credentials_info = {
+        "type": "service_account",
+        "project_id": get_env_variable("GOOGLE_PROJECT_ID"),
+        "private_key_id": get_env_variable("GOOGLE_PRIVATE_KEY_ID"),
+        "private_key": get_env_variable("GOOGLE_PRIVATE_KEY").replace("\\n", "\n"),
+        "client_email": get_env_variable("GOOGLE_CLIENT_EMAIL"),
+        "client_id": get_env_variable("GOOGLE_CLIENT_ID"),
+        "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+        "token_uri": "https://oauth2.googleapis.com/token",
+        "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+        "client_x509_cert_url": get_env_variable("GOOGLE_CLIENT_CERT_URL"),
+    }
+except EnvironmentError as e:
+    st.error(str(e))
+    st.stop()  # Stop execution if any required environment variable is missing
 
 credentials = service_account.Credentials.from_service_account_info(credentials_info)
 drive_service = build('drive', 'v3', credentials=credentials)
@@ -47,7 +55,7 @@ def get_combined_csv_text_from_drive(folder_id):
     all_text = []
     for file in files:
         print(f"Processing file: {file['name']} (ID: {file['id']}, MIME type: {file['mimeType']})")
-        fh = io.BytesIO()  # Use BytesIO for binary content
+        fh = io.BytesIO()
 
         try:
             request = drive_service.files().get_media(fileId=file['id'])
@@ -105,7 +113,7 @@ def setup_vectorstore(docs):
 def setup_rag_chain(vectorstore, model_name="gemini-1.5-flash"):
     template = """Answer the question in a single sentence with correct answer. Do not require extra explanation from the provided context. Make sure to provide all the details.
     If the answer is not in the provided context, just say, "answer is not available in the context."
-    If user asks you like 1. who build you then give the answer as Utkarsh and 2. what is your name then give the answer as FlivoAI chatbot or 3. who are you just say FlivoAI Chatbot to solve your queries".
+    If user asks you like 1. who built you, answer "Utkarsh," 2. your name, answer "FlivoAI chatbot," or 3. who are you, answer "FlivoAI Chatbot to solve your queries".
     
     Context: {context}
     Question: {question}"""
